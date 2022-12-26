@@ -31,8 +31,8 @@ TOUCH_IRQ PC8
                 rotation = <180>;
                 fps = <30>;
                 buswidth = <16>;
-                reset-gpios = <&pio 2 14 1>; /* PC14 */
-                dc-gpios = <&pio 2 15 0>;  /* PC15 */
+                reset-gpios = <&pio 2 14 1>;
+                dc-gpios = <&pio 2 15 0>;
                 debug = <0>;
             };
 
@@ -44,6 +44,7 @@ TOUCH_IRQ PC8
                 interrupts = <2 8 2>;
                 interrupt-parent = <&pio>;
                 pendown-gpio = <&pio 2 8 0>;
+                
                 ti,x-min = /bits/ 16 <0>;
                 ti,y-min = /bits/ 16 <0>;
                 ti,x-max = /bits/ 16 <0x0FFF>;
