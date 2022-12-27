@@ -41,7 +41,7 @@ TOUCH_IRQ	PL10
                 compatible = "ti,ads7846";
                 reg = <0>;
                 status = "okay";
-                spi-max-frequency = <1600000>; /* 1.6Mhz */
+                spi-max-frequency = <1000000>; /* 1.6Mhz */
                 interrupts = <0 10 2>; /* PL10 */
                 interrupt-parent = <&pio>;
                 pendown-gpio = <&pio 0 10 0>; /* PL10 */

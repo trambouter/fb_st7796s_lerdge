@@ -41,11 +41,10 @@ TOUCH_IRQ	PA03
 				compatible = "ti,ads7846";
                 reg = <0>; 
 				status = "okay";
-				spi-max-frequency = <1600000>; /* 1.6MHz */
+				spi-max-frequency = <1000000>; /* 1.6MHz */
                 interrupts = <0 3 2>; /* PA3 */
                 interrupt-parent = <&pio>;
                 pendown-gpio = <&pio 0 3 0>;  /* PA3 */
-
 				ti,x-min = /bits/ 16 <0>;
                 ti,y-min = /bits/ 16 <0>;
                 ti,x-max = /bits/ 16 <0x0FFF>;

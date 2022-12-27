@@ -41,7 +41,7 @@ TOUCH_IRQ 	PC8
                 compatible = "ti,ads7846";
                 reg = <0>;
                 status = "okay";
-                spi-max-frequency = <1600000>; /* 1.6Mhz */
+                spi-max-frequency = <1000000>; /* 1.6Mhz */
                 interrupts = <2 8 2>; /* PC8 */
                 interrupt-parent = <&pio>;
                 pendown-gpio = <&pio 2 8 0>; /* PC8 */
