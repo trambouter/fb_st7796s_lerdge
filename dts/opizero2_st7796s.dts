@@ -1,12 +1,12 @@
 /*
-MOSI      PH7
-MISO      PH8
-CLK       PH6
-TFT_CS    PC10
-DC        PC15
-RST       PC14
-TOUCH_CS  PC7
-TOUCH_IRQ PC8
+MOSI      	PH7
+MISO      	PH8
+CLK       	PH6
+TFT_CS    	PC10
+DC        	PC15
+RST       	PC14
+TOUCH_CS  	PC7
+TOUCH_IRQ 	PC8
 */
 
 /dts-v1/;
@@ -19,6 +19,7 @@ TOUCH_IRQ PC8
         target = <&spi1>;
         __overlay__ {
             num-cs = <2>;
+			/* PC7 - Touch CS;  PC10 - TFT_CS */
             cs-gpios = <&pio 2 7 0>, <&pio 2 10 0>;
             status = "okay";
             #address-cells = <1>;
@@ -27,12 +28,12 @@ TOUCH_IRQ PC8
             st7796: st7796s@0{
                 compatible = "sitronix,st7796s";
                 reg = <1>;
-                spi-max-frequency = <10000000>;
+                spi-max-frequency = <10000000>; /* 10Mhz */
                 rotation = <180>;
                 fps = <30>;
                 buswidth = <16>;
-                reset-gpios = <&pio 2 14 1>;
-                dc-gpios = <&pio 2 15 0>;
+                reset-gpios = <&pio 2 14 1>; /* PC14 */
+                dc-gpios = <&pio 2 15 0>; /* PC15 */
                 debug = <0>;
             };
 
@@ -40,11 +41,10 @@ TOUCH_IRQ PC8
                 compatible = "ti,ads7846";
                 reg = <0>;
                 status = "okay";
-                spi-max-frequency = <1600000>;
-                interrupts = <2 8 2>;
+                spi-max-frequency = <1600000>; /* 1.6Mhz */
+                interrupts = <2 8 2>; /* PC8 */
                 interrupt-parent = <&pio>;
-                pendown-gpio = <&pio 2 8 0>;
-                
+                pendown-gpio = <&pio 2 8 0>; /* PC8 */
                 ti,x-min = /bits/ 16 <0>;
                 ti,y-min = /bits/ 16 <0>;
                 ti,x-max = /bits/ 16 <0x0FFF>;
@@ -52,7 +52,7 @@ TOUCH_IRQ PC8
                 ti,pressure-min = /bits/ 16 <0>;
                 ti,pressure-max = /bits/ 16 <0xFFFF>;
                 ti,x-plate-ohms = /bits/ 16 <400>;
-                };
-            };
-      };
+			};
+    	};
+	};
 };

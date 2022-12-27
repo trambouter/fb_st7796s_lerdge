@@ -1,18 +1,22 @@
 # Подключение дисплея Lerdge
 Плата дисплея основана на LCD контроллере ST7796s и контроллере тачскрина XPT2046.
 
+Обратите внимание что уровни на всех выводах 3.3v, но сама плата дисплея питается от 5v т.к. на ней уставлен понижающий стабилизатор.
+
 ST7796s на этой плате может работать только в паралельном 16 битном режиме, для подключения его к OrangePi или RaspberryPi необходимо заставить его работать по SPI шине.
 
 Реализовать конвертацию можно двумя способами, собрать конвертер на сдвиговых регистрах 74HC4094 или использовать плату на STM32F103C8 называемой в народе BluePill.
 
+Работа конвертора очень простая - считываем 16 бит с шины SPI в сдвиговый регистр, активируем вывод WR (LOW), устанавливаем значение регистра на шину данных, и даем сигнал дисплею на запись устаналивая WR в HIGH, все остальные сигналы сформирует драйвер (DC,CS).
+
+[Даташит на контроллер ST7796s](https://www.displayfuture.com/Display/datasheet/controller/ST7796s.pdf)
+
 # Распиновка платы дисплея
-Для подключения платы дисплея, я использовал такой переходник, в принципе можно использовть и переходник на 40 контактов - тогда шлейф надо сдвинуть ближе к первому контакту.
+Для подключения платы дисплея, использовался такой переходник, в принципе можно использовть и переходник на 40 контактов - тогда шлейф надо сдвинуть ближе к первому контакту.
 
 [Купить можно тут](https://aliexpress.ru/item/1005003044150117.html?sku_id=12000023422069312) или [тут](https://voltiq.ru/shop/fpc-ffc-dip-flat-cable-loop-adapter/?attribute_pa_cable-loop-type=40-pins)
 
 ![](images/FPC-36P.png)
-
-
 
 ![](images/dboard_pins.png)
 
@@ -78,6 +82,7 @@ sudo orangepi-add-overlay opizero2_st7796s.dts
 В dts файле можно попровать изменить spi-max-frequency, этот параметр указывает на какой частоте будет работать дисплей. На 10мгц работает медленно, но для klipperscreen хватает. На 30мгц - уже очень комфортно работать с дисплеем.
 
 # Схема конвертера SPI в 16bit
+__Необходимо обратить внимание что плата дисплея питается от 5V, но сами входы расчитаны на 3.3V, поэтому все микросхемы необходимо питать от 3.3V !__
 ![](images/spi_convertor.png)
 
 # Использование STM32F103C8 для подключения
@@ -86,7 +91,9 @@ sudo orangepi-add-overlay opizero2_st7796s.dts
 Схема подключения:
 ![](images/bluepill_spi.png)
 
-Есть одна особенность - если хотите чтобы диспей работал быстро - желательно припаять провод к резистору R4 - это будет выход контроллера PB2, который не выведен на гребенку контактов. Этот контакт подключается к входу дисплея D10, если использовать такой вариант - то код работает намного быстрее и работу шины SPI спокойно можно разогнать до 30мгц (если разогнать саму stm32 до 112мгц или 124мгц)
+Есть одна особенность - если хотите чтобы диспей работал быстро - желательно припаять провод к резистору R4 - это будет выход контроллера PB2, который не выведен на гребенку контактов. Этот контакт подключается к входу дисплея D10, если использовать такой вариант - то код работает намного быстрее и работу шины SPI спокойно можно разогнать до 30мгц (если разогнать саму stm32 до 112мгц или 124мгц, но на таких частотах замечена нестабильная работа)
+
+На стандартной для STM32F103 частоте 72мгц, стабильно работает указание шины SPI в 10мгц.
 
 ![](images/Bluepill_R4.jpg)
 
@@ -129,9 +136,71 @@ sudo orangepi-add-overlay opizero2_st7796s.dts
 |TFT_CS|PL8|
 |DC|PD15|
 |RST|PD16|
-|TOUCH_CS|PC7|
-|TOUCH_IRQ|PC8|
+|TOUCH_CS|PD21|
+|TOUCH_IRQ|PL10|
 
 # Настройка Xorg и KlipperScreen
-Пока не готово.
+Сначала установим KlipperScreen через kiauh.
 
+После установки доустановим необходимые пакеты:
+
+```
+sudo apt install xserver-xorg-input-libinput xinput-calibrator
+```
+
+В файл __/etc/X11/Xwrapper.config__ нужно добавить:
+
+```
+allowed_users=anybody
+needs_root_rights=yes
+```
+
+В дистрибутиве Armbian вместо пакета __xserver-xorg-video-fbdev__ может быть установлен __remove xserver-xorg-video-fbturbo__. Нам он не подходит, поэтому заменяем:
+
+```
+sudo apt-get remove xserver-xorg-video-fbturbo
+sudo apt-get install xserver-xorg-video-fbdev
+sudo mv /etc/X11/xorg.conf.d/50-fbturbo.conf /etc/X11/xorg.conf.d/50-fbdev.conf
+```
+
+В файле __/etc/X11/xorg.conf.d/50-fbdev.conf__ поменяем Driver на fbdev:
+```
+Section "Device"
+        Identifier      "Allwinner FBDEV"
+        Driver          "fbdev"
+        Option          "fbdev" "/dev/fb0"
+        Option          "SwapbuffersWait" "true"
+EndSection
+```
+Также необходимо создать файл __/etc/X11/xorg.conf.d/51-touch.conf__ для конфигурации тача:
+```
+Section "InputClass"
+        Identifier "ADS7846 Touchscreen"
+        MatchIsTouchscreen "on"
+        MatchDevicePath "/dev/input/event*"
+        Driver "libinput"
+        Option "TransformationMatrix" "0 -1 1 -1 0 1 0 0 1"
+        Option  "SwapXY"        "1"
+        Option  "InvertX"       "1"
+        Option  "InvertY"       "1"
+EndSection
+```
+
+Оба эти файла есть в директории репозитория xorg, так что можно их скопировать оттуда в __/etc/X11/xorg.conf.d/__
+
+При необходимости можно произвести калибровку тача, сначала узнаем id устройства:
+
+```
+pi@klipper:~$ DISPLAY=:0 xinput_calibrator --list
+Device "ADS7846 Touchscreen" id=6
+```
+
+В нашем случаe id=6, запускаем калибровку:
+```
+DISPLAY=:0 sudo xinput_calibrator --device 6 --output-type xorg.conf.d  --output-filename /etc/X11/xorg.conf.d/99-calibration.conf
+```
+
+Результат калибровки запишется в __/etc/X11/xorg.conf.d/99-calibration.conf__, потребуется только перезапустить KlipperScreen для применения параметров:
+```
+sudo systemctl restart KlipperScreen.service
+```

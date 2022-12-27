@@ -1,0 +1,58 @@
+/*
+MOSI		PH5
+MISO		PH6
+CLK			PH4
+TFT_CS		PL8
+DC			PD15
+RST			PD16
+TOUCH_CS	PD21
+TOUCH_IRQ	PL10
+*/
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "allwinner,sun50i-h6";
+
+    fragment@0 {
+		target-path = "/soc/spi@5011000"; /* If not work, try: target = <&spi1>; */
+		__overlay__ {
+			num-cs = <2>;
+			/* PD21 - Touch CS;  PL8 - TFT_CS */
+			cs-gpios = <&pio 3 21 0>, <&pio 0 8 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			st7796: st7796s@0{
+				compatible = "sitronix,st7796s";
+				reg = <1>;
+				spi-max-frequency = <10000000>; /* 10Mhz */
+				rotation = <180>;
+				fps = <30>;
+				buswidth = <16>;
+				reset-gpios = <&pio 3 16 1>; /* PD16 */
+				dc-gpios = <&pio 3 15 0>; /* PD15 */
+				debug = <0>;
+			};
+
+			ads7846: ads7846@0 {
+                compatible = "ti,ads7846";
+                reg = <0>;
+                status = "okay";
+                spi-max-frequency = <1600000>; /* 1.6Mhz */
+                interrupts = <0 10 2>; /* PL10 */
+                interrupt-parent = <&pio>;
+                pendown-gpio = <&pio 0 10 0>; /* PL10 */
+                ti,x-min = /bits/ 16 <0>;
+                ti,y-min = /bits/ 16 <0>;
+                ti,x-max = /bits/ 16 <0x0FFF>;
+                ti,y-max = /bits/ 16 <0x0FFF>;
+                ti,pressure-min = /bits/ 16 <0>;
+                ti,pressure-max = /bits/ 16 <0xFFFF>;
+                ti,x-plate-ohms = /bits/ 16 <400>;
+            };
+        };
+	};
+};
